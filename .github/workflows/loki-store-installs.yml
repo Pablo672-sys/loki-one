@@ -1,45 +1,96 @@
-# Loki Store installer v2
+# Loki Store installer v1
 name: Loki Store installs
 
 on:
   push:
     paths:
       - 'app/index.html'
-      - 'app/store.js'
       - '.github/workflows/loki-store-installs.yml'
 
 permissions:
   contents: write
 
 jobs:
-  install-store-module:
-    if: ${{ !startsWith(github.event.head_commit.message, 'chore: install Loki Store module') }}
+  upgrade-store:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore: upgrade Loki Store') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Connect Store module
+      - name: Add download and uninstall system
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('app/index.html')
-          s=p.read_text(encoding='utf-8')
-          tag='<script src="store.js?v=2"></script>'
-          if tag not in s:
-              marker='</body></html>'
-              if marker not in s:
-                  raise SystemExit('HTML closing marker not found')
-              s=s.replace(marker, tag+marker, 1)
-          s=s.replace('<title>Loki One 1.2</title>','<title>Loki One 2.1</title>')
-          p.write_text(s,encoding='utf-8')
+
+          p = Path('app/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('<title>Loki One 1.2</title>', '<title>Loki One 2.1</title>')
+
+          start = s.find("const apps=[")
+          end_marker = "function addTask()"
+          end = s.find(end_marker, start)
+          if start == -1 or end == -1:
+              raise SystemExit('Store block markers not found; nothing changed.')
+
+          new = r'''const appCatalog=[
+            {id:'game',icon:'🎮',name:'Jungle Run',desc:'Jogo de corrida do Loki One',size:'8 MB'},
+            {id:'tasks',icon:'✅',name:'Tarefas',desc:'Organize seu dia',size:'3 MB'},
+            {id:'notes',icon:'📝',name:'Notas',desc:'Escreva e salve suas ideias',size:'2 MB'},
+            {id:'calendar',icon:'📅',name:'Calendário',desc:'Veja seus dias e meses',size:'2 MB'},
+            {id:'clockApp',icon:'⏰',name:'Relógio',desc:'Relógio local',size:'1 MB'},
+            {id:'calc',icon:'🧮',name:'Calculadora',desc:'Cálculos rápidos',size:'1 MB'},
+            {id:'files',icon:'📁',name:'Arquivos',desc:'Guarde arquivos no aparelho',size:'2 MB',core:true},
+            {id:'browser',icon:'🌐',name:'Navegador',desc:'Abra sites externos',size:'2 MB'},
+            {id:'music',icon:'🎵',name:'Loki Music',desc:'Player de demonstração',size:'4 MB'},
+            {id:'notifications',icon:'🔔',name:'Notificações',desc:'Central de avisos',size:'1 MB',core:true},
+            {id:'settings',icon:'⚙️',name:'Configurações',desc:'Personalize o Loki One',size:'1 MB',core:true},
+            {id:'store',icon:'🛍️',name:'Loki Store',desc:'Baixe e gerencie seus apps',size:'2 MB',core:true}
+          ];
+          const coreApps=appCatalog.filter(a=>a.core).map(a=>a.id);
+          let installed=JSON.parse(localStorage.getItem('loki_installed_apps')||'null');
+          if(!Array.isArray(installed)){installed=coreApps;localStorage.setItem('loki_installed_apps',JSON.stringify(installed));}
+          const isInstalled=id=>installed.includes(id);
+          const appById=id=>appCatalog.find(a=>a.id===id);
+          function saveInstalled(){localStorage.setItem('loki_installed_apps',JSON.stringify(installed));}
+          function renderApps(){
+            $('apps').innerHTML=appCatalog.filter(a=>isInstalled(a.id)&&a.id!=='store').map(a=>`<button class="app" onclick="go('${a.id}')"><span class="appIcon">${a.icon}</span><span class="appLabel">${a.name}</span></button>`).join('')+
+              (isInstalled('store')?`<button class="app" onclick="go('store')"><span class="appIcon">🛍️</span><span class="appLabel">Loki Store</span></button>`:'');
+          }
+          function renderStore(){
+            $('storeList').innerHTML=appCatalog.map(a=>{
+              const core=a.core?' <span class="muted">• essencial</span>':'';
+              const action=a.core
+                ? '<button class="btn" disabled>Incluído</button>'
+                : isInstalled(a.id)
+                  ? `<div style="display:flex;gap:7px"><button class="btn" onclick="go('${a.id}')">Abrir</button><button class="btn" onclick="uninstallApp('${a.id}')">Desinstalar</button></div>`
+                  : `<button class="btn" onclick="installApp('${a.id}',this)">Baixar</button>`;
+              return `<div class="row glass"><div class="appIcon" style="margin:0">${a.icon}</div><div class="grow"><b>${a.name}</b>${core}<div class="muted">${a.desc} • ${a.size}</div></div>${action}</div>`;
+            }).join('');
+          }
+          function installApp(id,button){
+            const a=appById(id); if(!a||isInstalled(id))return;
+            button.disabled=true;button.textContent='Baixando…';
+            setTimeout(()=>{installed.push(id);saveInstalled();renderApps();renderStore();notify('Loki Store',`${a.name} instalado ✓`);},650);
+          }
+          function uninstallApp(id){
+            const a=appById(id); if(!a||a.core)return;
+            if(!isInstalled(id))return;
+            installed=installed.filter(x=>x!==id);saveInstalled();
+            if(document.querySelector('.screen.on')?.id===id)go('home');
+            renderApps();renderStore();notify('Loki Store',`${a.name} desinstalado`);
+          }
+          renderApps();renderStore();
+          '''
+          s = s[:start] + new + s[end:]
+          p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit only when needed
+      - name: Commit only when changed
         run: |
           git config user.name "loki-one-bot"
           git config user.email "41898282+loki-one-bot@users.noreply.github.com"
           git add app/index.html
           if git diff --cached --quiet; then
-            echo "Store module already connected."
+            echo "No changes needed."
           else
-            git commit -m "chore: install Loki Store module"
+            git commit -m "chore: upgrade Loki Store"
             git push
           fi
