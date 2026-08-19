@@ -1,0 +1,55 @@
+/* Loki One — Android-inspired, original visual layer */
+:root{
+  --bg:#07101f;
+  --panel:rgba(24,38,62,.72);
+  --line:rgba(255,255,255,.14);
+  --muted:#aab7cf;
+  --text:#f7f9ff;
+  --accent:#5b9cff;
+}
+.device{
+  background:
+    radial-gradient(circle at 12% 4%,rgba(65,117,215,.30),transparent 30%),
+    radial-gradient(circle at 88% 18%,rgba(94,73,190,.22),transparent 26%),
+    linear-gradient(160deg,#07101f 0%,#0b1730 52%,#050a13 100%);
+}
+.status{
+  height:38px; flex-basis:38px; padding:8px 18px;
+  font-weight:650; letter-spacing:.01em;
+}
+.viewport{padding:0 16px}
+.hero{text-align:left;padding:10px 4px 2px}
+.hero h1{font-size:30px;letter-spacing:.06em;margin:0 0 5px}
+.hero p{font-size:11px;letter-spacing:.12em}
+.widgets{grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.widget{min-height:124px;padding:14px;border-radius:25px;background:rgba(20,34,57,.70)}
+.clockWidget{grid-column:span 2;min-height:108px}
+.controls{grid-column:span 2;min-height:92px}
+.taskWidget,.musicWidget{min-height:116px}
+.glass{
+  border:1px solid rgba(255,255,255,.13);
+  background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.035));
+  box-shadow:0 10px 30px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.08);
+}
+.control{border-radius:17px;background:rgba(255,255,255,.07)}
+.control.on{background:linear-gradient(145deg,#4e8fff,#356bdc)}
+.apps{grid-template-columns:repeat(4,1fr);gap:18px 8px;margin:14px 0}
+.appIcon{
+  width:60px;height:60px;border-radius:18px;font-size:29px;
+  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.055));
+  box-shadow:0 7px 18px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.12);
+}
+.appLabel{font-size:11px;color:#d8e0f0}
+.dots{padding:1px 0 8px}
+.dockArea{padding:7px 16px calc(9px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,rgba(4,9,18,.88) 35%)}
+.dock{height:70px;border-radius:28px;padding:8px;background:rgba(23,35,56,.82)}
+.dockIcon{width:43px;height:43px;border-radius:15px;background:rgba(255,255,255,.08)}
+.head{font-size:21px}
+.card,.row{border-radius:22px;background:rgba(24,38,62,.70)}
+@media(max-width:390px){
+  .hero h1{font-size:29px}
+  .widgets{grid-template-columns:1fr 1fr}
+  .clockWidget,.controls{grid-column:span 2}
+  .widget{min-height:112px}
+  .appIcon{width:57px;height:57px}
+}
