@@ -1,0 +1,47 @@
+name: Loki Store links
+
+on:
+  push:
+    paths:
+      - 'app/index.html'
+      - 'android/app/src/main/assets/index.html'
+      - '.github/workflows/loki-store-links.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  add-official-links:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore: sync official store links') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add official store cards
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          CARD = '''<div class="row glass"><div class="appIcon" style="margin:0">▶️</div><div class="grow"><b>YouTube</b><div class="muted">Google LLC • App oficial</div></div><button class="btn" onclick="openStoreLinks('https://play.google.com/store/apps/details?id=com.google.android.youtube','https://apps.apple.com/br/app/youtube/id544007664')">Abrir</button></div><div class="row glass"><div class="appIcon" style="margin:0">🎵</div><div class="grow"><b>TikTok</b><div class="muted">TikTok Pte. Ltd. • App oficial</div></div><button class="btn" onclick="openStoreLinks('https://play.google.com/store/apps/details?id=com.ss.android.ugc.trill','https://apps.apple.com/br/app/tiktok-v%C3%ADdeos-m%C3%BAsicas-live/id835599320')">Abrir</button></div>'''
+          JS = "function openStoreLinks(androidUrl,iosUrl){const u=/Android/i.test(navigator.userAgent)?androidUrl:iosUrl;window.open(u,'_blank');}"
+
+          for name in ['app/index.html','android/app/src/main/assets/index.html']:
+              p=Path(name)
+              s=p.read_text(encoding='utf-8')
+              if 'function openStoreLinks(' not in s:
+                  marker='</script></body></html>'
+                  s=s.replace(marker, JS + '</script></body></html>', 1)
+              if 'Google LLC • App oficial' not in s:
+                  marker='<div id="storeList"></div>'
+                  if marker in s:
+                      s=s.replace(marker, marker + CARD, 1)
+                  else:
+                      raise SystemExit(f'marker not found: {name}')
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "loki-one-bot"
+          git config user.email "41898282+loki-one-bot@users.noreply.github.com"
+          git add app/index.html android/app/src/main/assets/index.html
+          git diff --cached --quiet || git commit -m "chore: sync official store links"
+          git push
