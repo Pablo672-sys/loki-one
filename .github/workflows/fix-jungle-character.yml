@@ -1,0 +1,31 @@
+name: Fix Jungle Run character
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-jungle-character.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Jungle Run character
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "ctx.fillText('🏃',75,G+p.y);"
+          new = "ctx.fillText('🧍',75,G+p.y);"
+          if old not in s:
+              raise SystemExit('Jungle Run character marker not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Commit update
+        run: |
+          git config user.name 'Loki One Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/index.html
+          git commit -m 'Fix Jungle Run front-facing character' || exit 0
+          git push
