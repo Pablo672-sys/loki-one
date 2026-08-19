@@ -1,3 +1,4 @@
+# Loki One GitHub Pages deployment
 name: Deploy Loki One to GitHub Pages
 
 on:
