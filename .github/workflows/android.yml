@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "app/**"
       - "android/**"
       - ".github/workflows/android.yml"
   workflow_dispatch:
@@ -32,6 +33,9 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Sync current Loki One Web app into Android
+        run: cp ../app/index.html app/src/main/assets/index.html
+
       - name: Build APK
         run: gradle :app:assembleDebug --no-daemon
 
@@ -42,5 +46,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v0.1.${{ github.run_number }}"
-          gh release create "$TAG" "loki-one.apk" --title "Loki One Android $TAG" --notes "APK de teste do Loki One para Android."
+          TAG="android-v2.0.${{ github.run_number }}"
+          gh release create "$TAG" "loki-one.apk" --title "Loki One Android $TAG" --notes "Loki One 2.0 para Android. APK de distribuição/teste gerado automaticamente a partir da versão atual do app Web."
