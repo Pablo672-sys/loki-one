@@ -1,0 +1,44 @@
+name: Loki One - integrate Store
+
+on:
+  push:
+    paths:
+      - 'app/index.html'
+      - 'app/store.js'
+      - '.github/workflows/loki-integrate-store.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore: integrate Loki Store') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate Store into the actual app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/index.html')
+          s = p.read_text(encoding='utf-8')
+          if 'src="store.js?v=1"' not in s:
+              marker='</body>'
+              if marker not in s:
+                  raise SystemExit('Could not find </body> in app/index.html')
+              s=s.replace(marker,'<script src="store.js?v=1"></script>'+marker,1)
+          s=s.replace('<title>Loki One 1.2</title>','<title>Loki One 2.1</title>')
+          s=s.replace('loki-android.css?v=2','loki-android.css?v=3')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit integrated version
+        run: |
+          git config user.name "loki-one-bot"
+          git config user.email "41898282+loki-one-bot@users.noreply.github.com"
+          git add app/index.html
+          if git diff --cached --quiet; then
+            echo "Store already integrated."
+          else
+            git commit -m "chore: integrate Loki Store"
+            git push
+          fi
