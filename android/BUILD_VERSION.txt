@@ -1,2 +1,2 @@
-Loki One Android rebuild trigger: 0.5.2
-WebView cache fix included. Generate a fresh APK.
+Loki One Android 2.0.0
+Rebuild trigger for the public-ready Android package. WebView and cache fixes included.
