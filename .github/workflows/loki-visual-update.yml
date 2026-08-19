@@ -1,0 +1,37 @@
+name: Loki One visual update
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply-visual-layer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply Loki visual layer and icon fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/index.html')
+          s = p.read_text(encoding='utf-8')
+          link = '<link rel="stylesheet" href="../loki-android.css?v=2">'
+          if link not in s:
+              s = s.replace('</head>', link + '</head>', 1)
+          s = s.replace('<title>Loki One 1.0</title>', '<title>Loki One 1.2</title>')
+          p.write_text(s, encoding='utf-8')
+
+          m = Path('manifest.webmanifest')
+          ms = m.read_text(encoding='utf-8')
+          ms = ms.replace('"src":"loki-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"', '"src":"loki-icon.webp","sizes":"509x489","type":"image/webp","purpose":"any"')
+          ms = ms.replace('"start_url":"./app/"', '"start_url":"./app/?v=12"')
+          m.write_text(ms, encoding='utf-8')
+          PY
+      - name: Commit generated changes
+        run: |
+          git config user.name "loki-one-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/index.html manifest.webmanifest
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: Loki Android-inspired UI and app icon"
+          git push
