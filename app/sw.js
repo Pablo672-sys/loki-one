@@ -1,5 +1,46 @@
-const CACHE='loki-one-app-v4';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./jungle-fix.js','../loki-android.css?v=2','../loki-icon.svg','../loki-icon.webp'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);const isIndex=u.pathname.endsWith('/app/')||u.pathname.endsWith('/app/index.html');e.respondWith((isIndex?fetch(e.request).catch(()=>caches.match(e.request)):caches.match(e.request).then(c=>c||fetch(e.request))).then(async r=>{if(!r)return; if(!isIndex)return r; const text=await r.clone().text(); const injected=text.includes('jungle-fix.js')?text:text.replace('</body>','<script src="./jungle-fix.js?v=4"></script></body>'); return new Response(injected,{status:r.status,statusText:r.statusText,headers:r.headers});}).catch(()=>caches.match(e.request)))});
+const CACHE = 'loki-one-app-v5';
+const APP_SHELL = ['./','./index.html','./manifest.webmanifest','./jungle-fix.js','../loki-android.css?v=2','../loki-icon.svg','../loki-icon.webp'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
+  const request = event.request;
+  const url = new URL(request.url);
+  const isAppDocument = url.pathname.endsWith('/app/') || url.pathname.endsWith('/app/index.html');
+
+  if (isAppDocument) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then(response => {
+          if (!response || !response.ok) throw new Error('network response unavailable');
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then(cached => cached || fetch(request).then(response => {
+      const copy = response.clone();
+      caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {});
+      return response;
+    }))
+  );
+});
