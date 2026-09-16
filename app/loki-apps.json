@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "platform": "Loki One",
+  "apps": [
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "type": "external",
+      "provider": "Google",
+      "url": "https://www.youtube.com/",
+      "integration": "official-web"
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "type": "external",
+      "provider": "TikTok",
+      "url": "https://www.tiktok.com/",
+      "integration": "official-web"
+    }
+  ]
+}
