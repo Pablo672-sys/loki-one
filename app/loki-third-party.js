@@ -30,9 +30,13 @@
     window.openApp = function (id) {
       const app = externalApps.find(item => item.id === id);
       if (app) {
-        const popup = window.open(app.url, '_blank', 'noopener,noreferrer');
-        if (!popup && typeof toast === 'function') toast('Permita a abertura do site no navegador');
-        else if (typeof notify === 'function') notify(app.name, 'Serviço oficial aberto');
+        const popup = window.open(app.url, '_blank');
+        if (!popup) {
+          if (typeof toast === 'function') toast('Permita a abertura do site no navegador');
+        } else {
+          try { popup.opener = null; } catch (_) {}
+          if (typeof notify === 'function') notify(app.name, 'Serviço oficial aberto');
+        }
         return;
       }
       return originalOpenApp(id);
